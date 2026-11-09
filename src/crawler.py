@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import aiohttp
 
+from src.html_parser import HTMLParser, ParsedPage
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,12 @@ class AsyncCrawler:
             for url, result in zip(urls, responses)
             if isinstance(result, str)
         }
+
+    async def fetch_and_parse(self, url: str) -> ParsedPage:
+        """Загрузить страницу и распарсить HTML."""
+        html = await self.fetch_url(url)
+        parser = HTMLParser()
+        return await parser.parse_html(html, url)
 
     async def close(self) -> None:
         """Закрыть HTTP-сессию краулера."""
