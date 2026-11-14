@@ -1,0 +1,18 @@
+{
+  "urls": ["https://example.com"],
+  "sitemap_urls": [],
+  "max_pages": 100,
+  "max_depth": 2,
+  "max_concurrent": 10,
+  "max_per_domain": 2,
+  "rate_limit": 1.0,
+  "respect_robots": true,
+  "same_domain_only": true,
+  "exclude_patterns": ["/logout", "\\.pdf(?:$|\\?)"],
+  "include_patterns": [],
+  "output": "results/pages.sqlite",
+  "stats_json": "results/stats.json",
+  "report_html": "results/report.html",
+  "log_file": "results/crawler.log",
+  "log_level": "INFO"
+}

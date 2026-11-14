@@ -5,6 +5,8 @@ from urllib.parse import urljoin, urlsplit
 
 from bs4 import BeautifulSoup, ParserRejectedMarkup, Tag
 
+from src.errors import ParseError
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,9 +25,13 @@ class ParsedPage(TypedDict):
     headings: list[dict[str, str]]
     tables: list[list[list[str]]]
     lists: list[PageList]
+    parse_errors: list[str]
 
 
 class HTMLParser:
+    def __init__(self, on_error: Callable[[ParseError], None] | None = None) -> None:
+        self._on_error = on_error
+
     async def parse_html(self, html: str, url: str) -> ParsedPage:
         page: ParsedPage = {
             "url": url,
@@ -37,7 +43,13 @@ class HTMLParser:
             "headings": [],
             "tables": [],
             "lists": [],
+            "parse_errors": [],
         }
+
+        def report_error(message: str) -> None:
+            page["parse_errors"].append(message)
+            if self._on_error is not None:
+                self._on_error(ParseError(message, url=url))
 
         for parser in ("lxml", "html.parser"):
             try:
@@ -46,6 +58,7 @@ class HTMLParser:
             except ParserRejectedMarkup:
                 logger.warning("Парсер %s отклонил HTML страницы %s", parser, url)
         else:
+            report_error("Оба HTML-парсера отклонили документ")
             return page
 
         def extract_or_default[T](
@@ -53,7 +66,10 @@ class HTMLParser:
         ) -> T:
             try:
                 return extract()
-            except Exception:
+            except Exception as error:
+                report_error(
+                    f"Не удалось извлечь поле {field}: {type(error).__name__}: {error}"
+                )
                 logger.warning(
                     "Ошибка извлечения поля %s на странице %s",
                     field,
